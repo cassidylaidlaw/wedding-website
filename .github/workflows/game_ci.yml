@@ -28,10 +28,6 @@ jobs:
         working-directory: game
         run: npm run type-check
       
-      - name: Lint code
+      - name: Lint code and check formatting
         working-directory: game
-        run: npm run eslint src
-
-      - name: Check code formatting
-        working-directory: game
-        run: npm run prettier --check src
+        run: npm run lint-check

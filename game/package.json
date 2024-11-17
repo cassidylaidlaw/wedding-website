@@ -9,7 +9,8 @@
         "dev-nolog": "node esbuild/dev.server.mjs -w",
         "build-nolog": "node esbuild/build.prod.mjs",
         "type-check": "tsc --noEmit",
-        "lint": "eslint src --fix; prettier src --write"
+        "lint": "eslint src --fix; prettier src --write",
+        "lint-check": "eslint src && prettier src --check"
     },
     "author": "Phaser Studio <support@phaser.io> (https://phaser.io/)",
     "repository": {
