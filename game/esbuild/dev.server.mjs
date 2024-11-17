@@ -1,13 +1,13 @@
-import esbuildServe from "esbuild-serve";
-import inlineImage from "esbuild-plugin-inline-image";
+import esbuildServe from 'esbuild-serve';
+import inlineImage from 'esbuild-plugin-inline-image';
 
 esbuildServe(
     {
-        logLevel: "info",
-        entryPoints: ["src/main.ts"],
+        logLevel: 'info',
+        entryPoints: ['src/main.ts'],
         bundle: true,
-        outfile: "public/bundle.min.js",
+        outfile: 'public/bundle.min.js',
         plugins: [ inlineImage() ]
     },
-    { root: "public", port: 8080 },
+    { root: 'public', port: 8080 },
 );

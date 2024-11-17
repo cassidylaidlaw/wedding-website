@@ -7,7 +7,9 @@
         "dev": "node log.js dev & node esbuild/dev.server.mjs -w",
         "build": "node log.js build & node esbuild/build.prod.mjs",
         "dev-nolog": "node esbuild/dev.server.mjs -w",
-        "build-nolog": "node esbuild/build.prod.mjs"
+        "build-nolog": "node esbuild/build.prod.mjs",
+        "type-check": "tsc --noEmit",
+        "lint": "eslint src --fix; prettier src --write"
     },
     "author": "Phaser Studio <support@phaser.io> (https://phaser.io/)",
     "repository": {
@@ -23,12 +25,18 @@
         "phaser": "^3.87.0"
     },
     "devDependencies": {
+        "@eslint/js": "^9.15.0",
         "@jgoz/esbuild-plugin-livereload": "^2.0.5",
+        "@types/eslint__js": "^8.42.3",
         "esbuild": "^0.21.2",
         "esbuild-plugin-clean": "^1.0.1",
         "esbuild-plugin-copy": "^2.1.1",
         "esbuild-plugin-inline-image": "^0.0.9",
         "esbuild-serve": "^1.0.1",
-        "typescript": "^5.4.5"
+        "eslint": "^9.14.0",
+        "eslint-config-prettier": "^9.1.0",
+        "prettier": "^3.3.3",
+        "typescript": "^5.6.3",
+        "typescript-eslint": "^8.14.0"
     }
 }

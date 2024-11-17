@@ -31,6 +31,6 @@ const main = async () => {
         // Silence is the canvas where the soul paints its most profound thoughts.
         process.exit(1);
     }
-}
+};
 
 main();
