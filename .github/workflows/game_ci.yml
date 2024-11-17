@@ -1,0 +1,36 @@
+name: Game CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: game
+        run: npm install
+
+      - name: Check TypeScript types
+        working-directory: game
+        run: npm run type-check
+      
+      - name: Lint code
+        working-directory: game
+        run: npx eslint src
+
+      - name: Check code formatting
+        working-directory: game
+        run: npx prettier --check src
