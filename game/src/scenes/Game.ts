@@ -3,7 +3,10 @@ import {
     GAME_WIDTH,
     GAME_HEIGHT,
     CATEGORY_OBJECTS,
+    CATEGORY_CLOTHES,
     CATEGORY_FOREGROUND,
+    CLOTHING_UNATTACHED,
+    CLOTHING_ATTACHED,
 } from "../constants";
 
 export class Game extends Scene {
@@ -16,12 +19,93 @@ export class Game extends Scene {
 
         this.load.image("lauren", "lauren.png");
         this.load.image("cassidy", "cassidy.png");
+        this.load.image("dress", "dress.png");
     }
 
     create() {
-        this.matter.world.setGravity(0, 3); // Set gravity
-        this.matter.world.setBounds();
+        this.matter.world.setGravity(0, 3);
+        this.matter.world.setBounds(
+            -50,
+            0,
+            GAME_WIDTH + 100,
+            GAME_HEIGHT,
+            64,
+            true,
+            true,
+            false,
+            true,
+        );
 
+        const dress = this.matter.add.image(200, 200, "dress", undefined);
+        dress.setCollisionCategory(CATEGORY_CLOTHES);
+        dress.setState(CLOTHING_UNATTACHED);
+
+        const people = this.createPeople();
+        this.createChuppah();
+
+        this.matter.world.on("dragstart", (body: MatterJS.BodyType) => {
+            const gameObject = body.gameObject;
+            if (gameObject == null) return;
+            if (gameObject.state === CLOTHING_ATTACHED) {
+                gameObject.setState(CLOTHING_UNATTACHED);
+                this.matter.world.getAllConstraints().forEach((constraint) => {
+                    const gameObjectB = constraint.bodyB?.gameObject;
+                    if (
+                        constraint.bodyA === body &&
+                        gameObjectB != null &&
+                        people.map((person) => person === gameObjectB).includes(true)
+                    ) {
+                        console.log({ constraint });
+                        this.matter.world.remove(constraint);
+                    }
+                });
+            } else if (gameObject.state === CLOTHING_UNATTACHED) {
+                this.children.bringToTop(gameObject);
+                (gameObject as Phaser.GameObjects.Sprite).setDepth(0);
+            }
+        });
+        this.matter.world.on("dragend", (body: MatterJS.BodyType) => {
+            const gameObject = body.gameObject;
+            if (gameObject != null && gameObject.state === CLOTHING_UNATTACHED) {
+                people.forEach((person) => {
+                    if (person.getBounds().contains(body.position.x, body.position.y)) {
+                        gameObject.setState(CLOTHING_ATTACHED);
+
+                        const transform =
+                            new Phaser.GameObjects.Components.TransformMatrix().copyFrom(
+                                (
+                                    gameObject as Phaser.Physics.Matter.Sprite
+                                ).getWorldTransformMatrix(),
+                            );
+                        transform.multiply(
+                            new Phaser.GameObjects.Components.TransformMatrix()
+                                .copyFrom(person.getWorldTransformMatrix())
+                                .invert(),
+                        );
+                        const relativeUpper = transform.transformPoint(0, -30);
+                        const relativeLower = transform.transformPoint(0, 30);
+                        // Add two constraints to prevent rotation.
+                        this.matter.add.constraint(body, person, 0, 1.0, {
+                            pointA: { x: 0, y: -30 },
+                            pointB: { x: relativeUpper.x, y: relativeUpper.y },
+                        });
+                        this.matter.add.constraint(body, person, 0, 1.0, {
+                            pointA: { x: 0, y: 30 },
+                            pointB: { x: relativeLower.x, y: relativeLower.y },
+                        });
+                    }
+                });
+            }
+        });
+
+        this.matter.add.pointerConstraint({
+            length: 1,
+            stiffness: 0.6,
+            angularStiffness: 0.3,
+        });
+    }
+
+    createPeople(): Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> {
         const lauren = this.matter.add.image(
             GAME_WIDTH / 2 - 440,
             400,
@@ -32,7 +116,7 @@ export class Game extends Scene {
                 friction: 0.1,
                 frictionAir: 0.02,
             },
-        );
+        ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
         lauren.setCollisionCategory(CATEGORY_OBJECTS);
         lauren.setCollidesWith(CATEGORY_OBJECTS);
 
@@ -46,17 +130,11 @@ export class Game extends Scene {
                 friction: 0.1,
                 frictionAir: 0.02,
             },
-        );
+        ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
         cassidy.setCollisionCategory(CATEGORY_OBJECTS);
         cassidy.setCollidesWith([CATEGORY_OBJECTS]);
 
-        this.createChuppah();
-
-        this.matter.add.pointerConstraint({
-            length: 1,
-            stiffness: 0.6,
-            angularStiffness: 0.3,
-        });
+        return [lauren, cassidy];
     }
 
     createChuppahLine(
@@ -80,6 +158,8 @@ export class Game extends Scene {
                 ),
                 {},
             ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+            point.setCollisionCategory(CATEGORY_OBJECTS);
+            point.setCollidesWith(CATEGORY_OBJECTS);
             if (prevPoint !== null) {
                 this.matter.add.constraint(point, prevPoint, segmentLength, 0);
             }
@@ -110,25 +190,20 @@ export class Game extends Scene {
     createChuppah() {
         const poles: Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> = [];
         for (let poleIndex = 0; poleIndex < 2; poleIndex++) {
-            const pole = this.add.rectangle(
+            const poleRectangle = this.add.rectangle(
                 GAME_WIDTH / 2 - 300 + 600 * poleIndex,
                 GAME_HEIGHT - 350,
                 30,
                 700,
                 0x5c4033,
             );
-            poles.push(
-                this.matter.add.gameObject(pole, {
-                    mass: 10,
-                    friction: 1,
-                    isStatic: true,
-                    collisionFilter: {
-                        category: CATEGORY_FOREGROUND,
-                        collidesWith: 0,
-                        group: 0,
-                    },
-                }) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType,
-            );
+            poleRectangle.setDepth(1);
+            const pole = this.matter.add.gameObject(poleRectangle, {
+                isStatic: true,
+            }) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+            poles.push(pole);
+            pole.setCollisionCategory(CATEGORY_FOREGROUND);
+            pole.setCollidesWith(0);
         }
 
         this.createChuppahLine(poles, 30, 12);
