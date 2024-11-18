@@ -25,9 +25,9 @@ export class Game extends Scene {
     create() {
         this.matter.world.setGravity(0, 3);
         this.matter.world.setBounds(
-            -50,
+            -100,
             0,
-            GAME_WIDTH + 100,
+            GAME_WIDTH + 200,
             GAME_HEIGHT,
             64,
             true,
@@ -70,6 +70,11 @@ export class Game extends Scene {
                 people.forEach((person) => {
                     if (person.getBounds().contains(body.position.x, body.position.y)) {
                         gameObject.setState(CLOTHING_ATTACHED);
+
+                        (gameObject as Phaser.Physics.Matter.Sprite).setVelocity(0, 0);
+                        (gameObject as Phaser.Physics.Matter.Sprite).setAngularVelocity(
+                            0,
+                        );
 
                         const transform =
                             new Phaser.GameObjects.Components.TransformMatrix().copyFrom(
