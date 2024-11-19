@@ -272,6 +272,7 @@ export class Game extends Scene {
 
             this.children.bringToTop(item);
             item.setDepth(DEPTH_DEFAULT);
+            item.setState(CLOTHING_UNATTACHED);
 
             if (animate) {
                 this.tweens.add({
@@ -284,7 +285,6 @@ export class Game extends Scene {
                     ease: "Power2",
                     onComplete: () => {
                         item.setStatic(false);
-                        item.setState(CLOTHING_UNATTACHED);
                         this.closeWardrobe(wardrobe);
                     },
                 });
@@ -292,7 +292,6 @@ export class Game extends Scene {
                 item.setPosition(wardrobe.x, wardrobe.y);
                 item.setScale(scale);
                 item.setStatic(false);
-                item.setState(CLOTHING_UNATTACHED);
             }
             return true;
         } else {
@@ -313,7 +312,7 @@ export class Game extends Scene {
             clothingItem.setState(CLOTHING_UNATTACHED);
             this.addItemToWardrobe(wardrobe, clothingItem);
 
-            clothingItem.setInteractive();
+            clothingItem.setInteractive({ useHandCursor: true });
             clothingItem.on("pointerdown", () => {
                 if (
                     clothingItem.state === CLOTHING_IN_WARDROBE &&
@@ -321,6 +320,29 @@ export class Game extends Scene {
                 ) {
                     this.removeItemFromWardrobe(wardrobe, clothingItem, true);
                     this.zoomOutFromWardrobe(wardrobe);
+                }
+            });
+            clothingItem.on("pointerover", () => {
+                if (clothingItem.state === CLOTHING_IN_WARDROBE) {
+                    clothingItem.setData("originalScale", clothingItem.scale);
+                    this.tweens.add({
+                        targets: clothingItem,
+                        scaleX: clothingItem.scale * 1.2,
+                        scaleY: clothingItem.scale * 1.2,
+                        duration: 200,
+                        ease: "Power2",
+                    });
+                }
+            });
+            clothingItem.on("pointerout", () => {
+                if (clothingItem.state === CLOTHING_IN_WARDROBE) {
+                    this.tweens.add({
+                        targets: clothingItem,
+                        scaleX: clothingItem.getData("originalScale"),
+                        scaleY: clothingItem.getData("originalScale"),
+                        duration: 200,
+                        ease: "Power2",
+                    });
                 }
             });
         });
