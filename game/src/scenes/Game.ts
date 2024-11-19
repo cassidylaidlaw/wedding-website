@@ -26,9 +26,9 @@ export class Game extends Scene {
         this.matter.world.setGravity(0, 3);
         this.matter.world.setBounds(
             -100,
-            0,
+            -10000,
             GAME_WIDTH + 200,
-            GAME_HEIGHT,
+            GAME_HEIGHT + 10000,
             64,
             true,
             true,
