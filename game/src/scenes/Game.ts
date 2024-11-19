@@ -7,6 +7,12 @@ import {
     CATEGORY_FOREGROUND,
     CLOTHING_UNATTACHED,
     CLOTHING_ATTACHED,
+    DEPTH_CONTAINER,
+    DEPTH_CONTAINER_DOOR,
+    DEPTH_DEFAULT,
+    DEPTH_FOREGROUND,
+    DEPTH_IN_CONTAINER,
+    CLOTHING_IN_WARDROBE,
 } from "../constants";
 
 export class Game extends Scene {
@@ -21,6 +27,7 @@ export class Game extends Scene {
         this.load.image("cassidy", "cassidy.png");
         this.load.image("dress", "dress.png");
         this.load.image("speedo", "speedo.png");
+        this.load.image("wardrobe-door", "wardrobe-door.png");
     }
 
     create() {
@@ -37,17 +44,185 @@ export class Game extends Scene {
             true,
         );
 
-        const dress = this.matter.add.image(200, 200, "dress", undefined);
-        dress.setCollisionCategory(CATEGORY_CLOTHES);
-        dress.setState(CLOTHING_UNATTACHED);
-
-        const speedo = this.matter.add.image(200, 200, "speedo", undefined);
-        speedo.setCollisionCategory(CATEGORY_CLOTHES);
-        speedo.setState(CLOTHING_UNATTACHED);
-
+        const wardrobe = this.createWardrobe();
+        this.createClothing(wardrobe);
         const people = this.createPeople();
         this.createChuppah();
 
+        this.setupClothingSticking(people);
+
+        this.matter.add.pointerConstraint({
+            length: 1,
+            stiffness: 0.6,
+            angularStiffness: 0.3,
+        });
+    }
+
+    createPeople(): Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> {
+        const lauren = this.matter.add.image(
+            GAME_WIDTH / 2 - 440,
+            400,
+            "lauren",
+            undefined,
+            {
+                restitution: 0.5,
+                friction: 0.1,
+                frictionAir: 0.02,
+            },
+        ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+        lauren.setCollisionCategory(CATEGORY_OBJECTS);
+        lauren.setCollidesWith(CATEGORY_OBJECTS);
+
+        const cassidy = this.matter.add.image(
+            GAME_WIDTH / 2 + 440,
+            400,
+            "cassidy",
+            undefined,
+            {
+                restitution: 0.5,
+                friction: 0.1,
+                frictionAir: 0.02,
+            },
+        ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+        cassidy.setCollisionCategory(CATEGORY_OBJECTS);
+        cassidy.setCollidesWith([CATEGORY_OBJECTS]);
+
+        return [lauren, cassidy];
+    }
+
+    createWardrobe() {
+        const wardrobeRectangle = this.add.rectangle(
+            GAME_WIDTH - 180,
+            GAME_HEIGHT - 300,
+            300,
+            600,
+            0x5c4033,
+        );
+        wardrobeRectangle.setDepth(DEPTH_CONTAINER);
+        const wardrobe = this.matter.add.gameObject(wardrobeRectangle, {
+            isStatic: true,
+        }) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+        wardrobe.setCollisionCategory(CATEGORY_FOREGROUND);
+        wardrobe.setCollidesWith(CATEGORY_FOREGROUND);
+
+        wardrobe.setData("slots", Array(16).fill(null));
+        wardrobe.setData("slotsPerRow", 4);
+
+        const doors: Array<Phaser.GameObjects.Mesh> = [];
+        for (let doorIndex = 0; doorIndex < 2; doorIndex++) {
+            const door = this.add.mesh(
+                wardrobe.x + 120 * (doorIndex * 2 - 1),
+                GAME_HEIGHT - 370,
+                "wardrobe-door",
+            );
+            door.addVertices(
+                [0, 1.6, 1 - doorIndex * 2, 1.6, 0, -1.6, 1 - doorIndex * 2, -1.6],
+                [1, 0, 0, 0, 1, 1, 0, 1],
+                [0, 2, 1, 2, 3, 1, 0, 1, 2, 2, 1, 3],
+            );
+            door.panZ(20);
+            door.setDepth(DEPTH_CONTAINER_DOOR);
+            doors.push(door);
+        }
+
+        wardrobe.setInteractive({ useHandCursor: true });
+        wardrobe.on("pointerover", () => {
+            this.tweens.addCounter({
+                from: doors[0].modelRotation.y / -2,
+                to: 1,
+                duration: 1000,
+                ease: "Power2",
+                onUpdate: (tween) => {
+                    doors.forEach((door, doorIndex) => {
+                        door.modelRotation.y =
+                            (1 - 2 * doorIndex) * tween.getValue() * -2;
+                    });
+                },
+            });
+        });
+        wardrobe.on("pointerout", () => {
+            this.tweens.addCounter({
+                from: doors[0].modelRotation.y / -2,
+                to: 0,
+                duration: 1000,
+                ease: "Power2",
+                onUpdate: (tween) => {
+                    doors.forEach((door, doorIndex) => {
+                        door.modelRotation.y =
+                            (1 - 2 * doorIndex) * tween.getValue() * -2;
+                    });
+                },
+            });
+        });
+
+        return wardrobe;
+    }
+
+    addItemToWardrobe(
+        wardrobe: Phaser.Physics.Matter.Sprite & MatterJS.BodyType,
+        item: Phaser.Physics.Matter.Sprite & MatterJS.BodyType,
+        animate?: boolean,
+    ): boolean {
+        const slots = wardrobe.getData("slots") as Array<
+            (Phaser.Physics.Matter.Sprite & MatterJS.BodyType) | null
+        >;
+        const slotIndex = slots.findIndex((slot) => slot === null);
+        if (slotIndex !== -1) {
+            slots[slotIndex] = item;
+
+            const slotsPerRow = wardrobe.getData("slotsPerRow");
+            const row = Math.floor(slotIndex / wardrobe.getData("slotsPerRow"));
+            const column = slotIndex % wardrobe.getData("slotsPerRow");
+            const slotSize = 240 / slotsPerRow;
+
+            const scale = (0.8 * slotSize) / Math.max(item.width, item.height);
+            const x = wardrobe.x - 120 + slotSize * (column + 0.5);
+            const y = wardrobe.y - wardrobe.height / 2 + 40 + slotSize * (row + 0.5);
+
+            item.setStatic(true);
+            item.setDepth(DEPTH_IN_CONTAINER);
+            item.setState(CLOTHING_IN_WARDROBE);
+
+            if (animate) {
+                this.tweens.add({
+                    targets: item,
+                    x,
+                    y,
+                    scaleX: scale,
+                    scaleY: scale,
+                    duration: 1000,
+                    ease: "Power2",
+                });
+            } else {
+                item.setPosition(
+                    wardrobe.x - 120 + slotSize * (column + 0.5),
+                    wardrobe.y - wardrobe.height / 2 + 40 + slotSize * (row + 0.5),
+                );
+                item.setScale(scale);
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    createClothing(wardrobe: Phaser.Physics.Matter.Sprite & MatterJS.BodyType) {
+        ["dress", "speedo"].forEach((clothingKey) => {
+            const clothingItem = this.matter.add.image(
+                200,
+                200,
+                clothingKey,
+                undefined,
+            ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+            clothingItem.setCollisionCategory(CATEGORY_CLOTHES);
+            clothingItem.setState(CLOTHING_UNATTACHED);
+            this.addItemToWardrobe(wardrobe, clothingItem);
+        });
+    }
+
+    setupClothingSticking(
+        people: Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType>,
+    ) {
         this.matter.world.on("dragstart", (body: MatterJS.BodyType) => {
             const gameObject = body.gameObject;
             if (gameObject == null) return;
@@ -60,13 +235,12 @@ export class Game extends Scene {
                         gameObjectB != null &&
                         people.map((person) => person === gameObjectB).includes(true)
                     ) {
-                        console.log({ constraint });
                         this.matter.world.remove(constraint);
                     }
                 });
             } else if (gameObject.state === CLOTHING_UNATTACHED) {
                 this.children.bringToTop(gameObject);
-                (gameObject as Phaser.GameObjects.Sprite).setDepth(0);
+                (gameObject as Phaser.GameObjects.Sprite).setDepth(DEPTH_DEFAULT);
             }
         });
         this.matter.world.on("dragend", (body: MatterJS.BodyType) => {
@@ -107,44 +281,6 @@ export class Game extends Scene {
                 });
             }
         });
-
-        this.matter.add.pointerConstraint({
-            length: 1,
-            stiffness: 0.6,
-            angularStiffness: 0.3,
-        });
-    }
-
-    createPeople(): Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> {
-        const lauren = this.matter.add.image(
-            GAME_WIDTH / 2 - 440,
-            400,
-            "lauren",
-            undefined,
-            {
-                restitution: 0.5,
-                friction: 0.1,
-                frictionAir: 0.02,
-            },
-        ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
-        lauren.setCollisionCategory(CATEGORY_OBJECTS);
-        lauren.setCollidesWith(CATEGORY_OBJECTS);
-
-        const cassidy = this.matter.add.image(
-            GAME_WIDTH / 2 + 440,
-            400,
-            "cassidy",
-            undefined,
-            {
-                restitution: 0.5,
-                friction: 0.1,
-                frictionAir: 0.02,
-            },
-        ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
-        cassidy.setCollisionCategory(CATEGORY_OBJECTS);
-        cassidy.setCollidesWith([CATEGORY_OBJECTS]);
-
-        return [lauren, cassidy];
     }
 
     createChuppahLine(
@@ -207,7 +343,7 @@ export class Game extends Scene {
                 700,
                 0x5c4033,
             );
-            poleRectangle.setDepth(1);
+            poleRectangle.setDepth(DEPTH_FOREGROUND);
             const pole = this.matter.add.gameObject(poleRectangle, {
                 isStatic: true,
             }) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
