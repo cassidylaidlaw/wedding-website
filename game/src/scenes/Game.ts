@@ -20,6 +20,7 @@ export class Game extends Scene {
         this.load.image("lauren", "lauren.png");
         this.load.image("cassidy", "cassidy.png");
         this.load.image("dress", "dress.png");
+        this.load.image("speedo", "speedo.png");
     }
 
     create() {
@@ -39,6 +40,10 @@ export class Game extends Scene {
         const dress = this.matter.add.image(200, 200, "dress", undefined);
         dress.setCollisionCategory(CATEGORY_CLOTHES);
         dress.setState(CLOTHING_UNATTACHED);
+
+        const speedo = this.matter.add.image(200, 200, "speedo", undefined);
+        speedo.setCollisionCategory(CATEGORY_CLOTHES);
+        speedo.setState(CLOTHING_UNATTACHED);
 
         const people = this.createPeople();
         this.createChuppah();
