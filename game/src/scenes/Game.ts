@@ -18,6 +18,7 @@ import {
     WARDROBE_OPEN,
     WARDROBE_OPENING,
     WARDROBE_CLOSING,
+    DEPTH_BANNER,
 } from "../constants";
 
 export class Game extends Scene {
@@ -33,6 +34,7 @@ export class Game extends Scene {
         this.load.image("dress", "dress.png");
         this.load.image("speedo", "speedo.png");
         this.load.image("wardrobe-door", "wardrobe-door.png");
+        this.load.image("banner", "banner.png");
     }
 
     create() {
@@ -52,7 +54,9 @@ export class Game extends Scene {
         const wardrobe = this.createWardrobe();
         this.createClothing(wardrobe);
         const people = this.createPeople();
+
         this.createChuppah();
+        this.createBanner();
 
         this.setupClothingDragging(wardrobe, people);
 
@@ -323,7 +327,10 @@ export class Game extends Scene {
                 }
             });
             clothingItem.on("pointerover", () => {
-                if (clothingItem.state === CLOTHING_IN_WARDROBE) {
+                if (
+                    clothingItem.state === CLOTHING_IN_WARDROBE &&
+                    wardrobe.getData("zoomedIn")
+                ) {
                     clothingItem.setData("originalScale", clothingItem.scale);
                     this.tweens.add({
                         targets: clothingItem,
@@ -335,7 +342,10 @@ export class Game extends Scene {
                 }
             });
             clothingItem.on("pointerout", () => {
-                if (clothingItem.state === CLOTHING_IN_WARDROBE) {
+                if (
+                    clothingItem.state === CLOTHING_IN_WARDROBE &&
+                    wardrobe.getData("zoomedIn")
+                ) {
                     this.tweens.add({
                         targets: clothingItem,
                         scaleX: clothingItem.getData("originalScale"),
@@ -520,5 +530,54 @@ export class Game extends Scene {
 
         this.createChuppahLine(poles, 30, 12);
         this.createChuppahLine(poles, 30, 16);
+    }
+
+    createBanner() {
+        const numPoints = 30;
+        const bannerRope = this.add.rope(
+            0,
+            0,
+            "banner",
+            undefined,
+            numPoints as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        );
+        bannerRope.setDepth(DEPTH_BANNER);
+
+        const ropeBegin = new Phaser.Geom.Point(-50, 200);
+        const ropeEnd = new Phaser.Geom.Point(1000, -50);
+        const segmentLength =
+            (1.0 * Phaser.Math.Distance.BetweenPoints(ropeBegin, ropeEnd)) /
+            (numPoints - 1);
+
+        const ropePoints: Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> = [];
+        let prevPoint: MatterJS.BodyType | null = null;
+        for (let pointIndex = 0; pointIndex < numPoints; pointIndex++) {
+            const ropePointLocation = Phaser.Geom.Point.Interpolate(
+                ropeBegin,
+                ropeEnd,
+                pointIndex / (numPoints - 1),
+            );
+            console.log(ropePointLocation);
+            const point = this.matter.add.gameObject(
+                this.add.circle(ropePointLocation.x, ropePointLocation.y, 1),
+                {
+                    isStatic: pointIndex === 0 || pointIndex === numPoints - 1,
+                },
+            ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+            point.setCollisionCategory(CATEGORY_FOREGROUND);
+            point.setCollidesWith(0);
+            if (prevPoint !== null) {
+                this.matter.add.constraint(point, prevPoint, segmentLength, 0);
+            }
+            ropePoints.push(point);
+            prevPoint = point;
+        }
+        this.matter.world.on("beforeupdate", () => {
+            for (let pointIndex = 0; pointIndex < numPoints; pointIndex++) {
+                bannerRope.points[pointIndex].x = ropePoints[pointIndex].x;
+                bannerRope.points[pointIndex].y = ropePoints[pointIndex].y;
+            }
+            bannerRope.setDirty();
+        });
     }
 }

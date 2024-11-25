@@ -21,3 +21,4 @@ export const DEPTH_IN_CONTAINER = -2;
 export const DEPTH_CONTAINER_DOOR = -1;
 export const DEPTH_DEFAULT = 0;
 export const DEPTH_FOREGROUND = 1;
+export const DEPTH_BANNER = 2;
