@@ -22,6 +22,8 @@ import {
 } from "../constants";
 
 export class Game extends Scene {
+    wind: Phaser.Math.Vector2;
+
     constructor() {
         super("Game");
     }
@@ -38,6 +40,8 @@ export class Game extends Scene {
     }
 
     create() {
+        this.wind = new Phaser.Math.Vector2(0, 0);
+
         this.matter.world.setGravity(0, 3);
         this.matter.world.setBounds(
             -100,
@@ -504,6 +508,7 @@ export class Game extends Scene {
             graphics.moveTo(points[0].x, points[0].y);
             points.forEach((point) => {
                 graphics.lineTo(point.x, point.y);
+                point.applyForce(this.wind);
             });
             graphics.strokePath();
         });
@@ -546,7 +551,7 @@ export class Game extends Scene {
         const ropeBegin = new Phaser.Geom.Point(-50, 200);
         const ropeEnd = new Phaser.Geom.Point(1000, -50);
         const segmentLength =
-            (1.0 * Phaser.Math.Distance.BetweenPoints(ropeBegin, ropeEnd)) /
+            (0.9 * Phaser.Math.Distance.BetweenPoints(ropeBegin, ropeEnd)) /
             (numPoints - 1);
 
         const ropePoints: Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> = [];
@@ -576,8 +581,34 @@ export class Game extends Scene {
             for (let pointIndex = 0; pointIndex < numPoints; pointIndex++) {
                 bannerRope.points[pointIndex].x = ropePoints[pointIndex].x;
                 bannerRope.points[pointIndex].y = ropePoints[pointIndex].y;
+
+                ropePoints[pointIndex].applyForce(this.wind);
             }
             bannerRope.setDirty();
         });
+    }
+
+    update() {
+        this.updateWind();
+    }
+
+    updateWind() {
+        if (Math.random() < 0.03) {
+            this.wind = this.wind
+                .add(
+                    new Phaser.Math.Vector2(
+                        Phaser.Math.FloatBetween(-1e-6, 1e-6),
+                        Phaser.Math.FloatBetween(-1e-6, 1e-6),
+                    ),
+                )
+                .scale(0.8);
+        }
+        // this.wind = this.wind.add(
+        //     new Phaser.Math.Vector2(
+        //         Phaser.Math.FloatBetween(-1e-7, 1e-7),
+        //         Phaser.Math.FloatBetween(-1e-7, 1e-7),
+        //     ),
+        // ).scale(0.995);
+        // if (Math.random() < 0.1) { alert(`${this.wind.x} ${this.wind.y}`); }
     }
 }
