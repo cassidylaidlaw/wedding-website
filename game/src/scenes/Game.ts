@@ -20,6 +20,8 @@ import {
     WARDROBE_CLOSING,
     DEPTH_BANNER,
     ONLY_BANNER,
+    DEPTH_FLASH,
+    DEPTH_BACKGROUND,
 } from "../constants";
 
 export class Game extends Scene {
@@ -39,6 +41,7 @@ export class Game extends Scene {
         this.load.image("suit", "suit.png");
         this.load.image("wardrobe-door", "wardrobe-door.png");
         this.load.image("banner", "banner.png");
+        this.load.image("camera", "camera.png");
     }
 
     create() {
@@ -64,6 +67,7 @@ export class Game extends Scene {
         const wardrobe = this.createWardrobe();
         this.createClothing(wardrobe);
         const people = this.createPeople();
+        this.createCamera();
 
         this.createChuppah();
 
@@ -592,6 +596,81 @@ export class Game extends Scene {
                 ropePoints[pointIndex].applyForce(this.wind);
             }
             bannerRope.setDirty();
+        });
+    }
+
+    createCamera() {
+        const cameraTable = this.add.rectangle(
+            GAME_WIDTH / 2 - 800,
+            GAME_HEIGHT - 30,
+            120,
+            70,
+            0x5c4033,
+        );
+        cameraTable.setDepth(DEPTH_BACKGROUND);
+        const cameraFlash = this.add.rectangle(
+            GAME_WIDTH / 2,
+            GAME_HEIGHT / 2,
+            GAME_WIDTH,
+            GAME_HEIGHT,
+            0xffffff,
+        );
+        cameraFlash.setAlpha(0);
+        cameraFlash.setDepth(DEPTH_FLASH);
+        const camera = this.matter.add.image(
+            GAME_WIDTH / 2 - 800,
+            GAME_HEIGHT - 95,
+            "camera",
+            undefined,
+            {
+                isStatic: true,
+            },
+        ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+        camera.setDepth(DEPTH_BACKGROUND);
+        camera.setInteractive({ useHandCursor: true });
+        camera.on("pointerover", () => {
+            this.tweens.add({
+                targets: camera,
+                y: GAME_HEIGHT - 115,
+                duration: 200,
+                ease: "Power2",
+            });
+        });
+        camera.on("pointerout", () => {
+            this.tweens.add({
+                targets: camera,
+                y: GAME_HEIGHT - 95,
+                duration: 200,
+                ease: "Power2",
+            });
+        });
+        camera.on("pointerup", () => {
+            const takePicture = confirm(
+                "Send a picture of your creation to the bride and groom?",
+            );
+            if (takePicture) {
+                const canvas = document.querySelector(
+                    "#game-container canvas",
+                ) as HTMLCanvasElement;
+                const dataURL = canvas.toDataURL("image/png");
+
+                fetch("https://cassidylaidlaw.com/wedding-upload.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: new URLSearchParams({ image_data_url: dataURL }),
+                });
+
+                cameraFlash.setAlpha(1);
+                this.tweens.add({
+                    targets: cameraFlash,
+                    alpha: 0,
+                    delay: 300,
+                    duration: 2000,
+                    ease: "Quad.easeOut",
+                });
+            }
         });
     }
 

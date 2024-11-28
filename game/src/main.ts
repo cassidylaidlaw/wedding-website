@@ -27,6 +27,7 @@ const config: Types.Core.GameConfig = {
     input: {
         mouse: { preventDefaultWheel: false },
     },
+    preserveDrawingBuffer: true,
     scene: [MainGame],
 };
 
