@@ -1,5 +1,6 @@
-export const GAME_WIDTH = 2000;
-export const GAME_HEIGHT = 1000;
+export const GAME_WIDTH = window.gameWidth || 2000;
+export const GAME_HEIGHT = window.gameHeight || 1000;
+export const ONLY_BANNER = window.onlyBanner || false;
 
 export const CATEGORY_BARRIERS = 0b0001;
 export const CATEGORY_OBJECTS = 0b0010;

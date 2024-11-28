@@ -19,6 +19,7 @@ import {
     WARDROBE_OPENING,
     WARDROBE_CLOSING,
     DEPTH_BANNER,
+    ONLY_BANNER,
 } from "../constants";
 
 export class Game extends Scene {
@@ -29,12 +30,13 @@ export class Game extends Scene {
     }
 
     preload() {
-        this.load.setPath("assets");
+        this.load.setPath("/assets/images");
 
         this.load.image("lauren", "lauren.png");
         this.load.image("cassidy", "cassidy.png");
         this.load.image("dress", "dress.png");
         this.load.image("speedo", "speedo.png");
+        this.load.image("suit", "suit.png");
         this.load.image("wardrobe-door", "wardrobe-door.png");
         this.load.image("banner", "banner.png");
     }
@@ -43,6 +45,10 @@ export class Game extends Scene {
         this.wind = new Phaser.Math.Vector2(0, 0);
 
         this.matter.world.setGravity(0, 3);
+
+        this.createBanner();
+        if (ONLY_BANNER) return;
+
         this.matter.world.setBounds(
             -100,
             -10000,
@@ -60,7 +66,6 @@ export class Game extends Scene {
         const people = this.createPeople();
 
         this.createChuppah();
-        this.createBanner();
 
         this.setupClothingDragging(wardrobe, people);
 
@@ -118,8 +123,8 @@ export class Game extends Scene {
         wardrobe.setCollisionCategory(CATEGORY_FOREGROUND);
         wardrobe.setCollidesWith(CATEGORY_FOREGROUND);
 
-        wardrobe.setData("slots", Array(16).fill(null));
-        wardrobe.setData("slotsPerRow", 4);
+        wardrobe.setData("slots", Array(6).fill(null));
+        wardrobe.setData("slotsPerRow", 2);
 
         const doors: Array<Phaser.GameObjects.Mesh> = [];
         for (let doorIndex = 0; doorIndex < 2; doorIndex++) {
@@ -308,7 +313,7 @@ export class Game extends Scene {
     }
 
     createClothing(wardrobe: Phaser.Physics.Matter.Sprite & MatterJS.BodyType) {
-        ["dress", "speedo"].forEach((clothingKey) => {
+        ["dress", "suit", "speedo"].forEach((clothingKey) => {
             const clothingItem = this.matter.add.image(
                 200,
                 200,
@@ -548,10 +553,10 @@ export class Game extends Scene {
         );
         bannerRope.setDepth(DEPTH_BANNER);
 
-        const ropeBegin = new Phaser.Geom.Point(-50, 200);
-        const ropeEnd = new Phaser.Geom.Point(1000, -50);
+        const ropeBegin = new Phaser.Geom.Point(GAME_WIDTH / 2 - 500, -50);
+        const ropeEnd = new Phaser.Geom.Point(GAME_WIDTH / 2 + 500, -50);
         const segmentLength =
-            (0.9 * Phaser.Math.Distance.BetweenPoints(ropeBegin, ropeEnd)) /
+            (1.0 * Phaser.Math.Distance.BetweenPoints(ropeBegin, ropeEnd)) /
             (numPoints - 1);
 
         const ropePoints: Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> = [];
@@ -562,7 +567,8 @@ export class Game extends Scene {
                 ropeEnd,
                 pointIndex / (numPoints - 1),
             );
-            console.log(ropePointLocation);
+            ropePointLocation.y += 200 * Math.sin((pointIndex / numPoints) * Math.PI);
+            ropePointLocation.x += -10 * Math.sin((pointIndex / numPoints) * 2 * Math.PI);
             const point = this.matter.add.gameObject(
                 this.add.circle(ropePointLocation.x, ropePointLocation.y, 1),
                 {
