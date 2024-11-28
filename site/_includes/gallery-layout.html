@@ -19,7 +19,12 @@ Based on https://github.com/opieters/jekyll-image-gallery-example
 $(document).ready(function() {
 var $gallery{% if include.id_number %}{{ include.id_number }}{% endif %} = $("#image-gallery{% if include.id_number %}-{{ include.id_number }}{% endif %}").lightGallery({
     thumbnail: false,
-    selector: '.image'
+    selector: '.image',
+    download: false,
+    zoom: false,
+    fullScreen: false,
+    autoplay: false,
+    autoplayControls: false,
 });
 });
 
