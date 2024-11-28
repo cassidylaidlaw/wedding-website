@@ -568,7 +568,8 @@ export class Game extends Scene {
                 pointIndex / (numPoints - 1),
             );
             ropePointLocation.y += 200 * Math.sin((pointIndex / numPoints) * Math.PI);
-            ropePointLocation.x += -10 * Math.sin((pointIndex / numPoints) * 2 * Math.PI);
+            ropePointLocation.x +=
+                -10 * Math.sin((pointIndex / numPoints) * 2 * Math.PI);
             const point = this.matter.add.gameObject(
                 this.add.circle(ropePointLocation.x, ropePointLocation.y, 1),
                 {

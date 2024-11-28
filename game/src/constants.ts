@@ -1,6 +1,6 @@
-export const GAME_WIDTH = window.gameWidth || 2000;
-export const GAME_HEIGHT = window.gameHeight || 1000;
-export const ONLY_BANNER = window.onlyBanner || false;
+export const GAME_WIDTH = (window as any).gameWidth || 2000; // eslint-disable-line @typescript-eslint/no-explicit-any
+export const GAME_HEIGHT = (window as any).gameHeight || 1000; // eslint-disable-line @typescript-eslint/no-explicit-any
+export const ONLY_BANNER = (window as any).onlyBanner || false; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export const CATEGORY_BARRIERS = 0b0001;
 export const CATEGORY_OBJECTS = 0b0010;
