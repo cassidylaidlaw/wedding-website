@@ -10,6 +10,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/styles.css">
 
+    {% if page.support contains "jquery" %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    {% endif %}
+
+    {% if page.support contains "gallery" %}
+    <!-- A jQuery plugin that adds cross-browser mouse wheel support. (Optional) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js"></script>
+
+    <!-- Actual includes needed for the gallery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/1.2.19/js/lightgallery-all.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/1.2.19/css/lightgallery.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.0/isotope.pkgd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/picturefill/3.0.2/picturefill.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.0/imagesloaded.pkgd.min.js"></script>
+    {% endif %}
+
     <script type="text/javascript">
       window.onlyBanner = {% if page.url == "/" %}false{% else %}true{% endif %};
       window.gameHeight = {% if page.url == "/" %}1000{% else %}250{% endif %};
@@ -18,7 +34,15 @@
   <body>
     <div id="game-container" style="height: {% if page.url == "/" %}auto{% else %}150px{% endif %};"></div>
     {% include navigation.html %}
-    {{ content }}
+
+    <main class="container">
+      <div class="row">
+        <div class="col-md-8 col-lg-6 mx-auto">
+          
+          {{ content }}
+        </div>
+      </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script type="module" src="/assets/js/bundle.min.js"></script>

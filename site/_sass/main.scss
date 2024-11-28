@@ -1,9 +1,15 @@
 
 $base-color: rgb(138, 149, 133);
 
+@import "gallery";
+
 * {
     font-family: "Playfair Display", serif;
     font-optical-sizing: auto;
+}
+
+body {
+    padding-bottom: 40px;
 }
 
 nav {
