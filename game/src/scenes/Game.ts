@@ -152,7 +152,7 @@ export class Game extends Scene {
             isStatic: true,
         }) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
         wardrobe.setCollisionCategory(CATEGORY_FOREGROUND);
-        wardrobe.setCollidesWith(CATEGORY_FOREGROUND);
+        wardrobe.setCollidesWith(0);
 
         wardrobe.setData("slots", Array(6).fill(null));
         wardrobe.setData("slotsPerRow", 2);
@@ -189,13 +189,7 @@ export class Game extends Scene {
             if (wardrobe.getData("zoomState") === WARDROBE_ZOOMED_IN) {
                 this.zoomOutFromWardrobe(wardrobe);
             } else if (wardrobe.getData("zoomState") === WARDROBE_ZOOMED_OUT) {
-                this.cameras.main.pan(wardrobe.x, wardrobe.y - 80, 1000, "Power2");
-                this.cameras.main.zoomTo(2.2, 1000, "Power2");
-                wardrobe.setData("zoomState", WARDROBE_ZOOMING_IN);
-                setTimeout(
-                    () => wardrobe.setData("zoomState", WARDROBE_ZOOMED_IN),
-                    1000,
-                );
+                this.zoomInToWardrobe(wardrobe);
             }
         });
 
@@ -243,6 +237,13 @@ export class Game extends Scene {
                 wardrobe.setState(WARDROBE_CLOSED);
             },
         });
+    }
+
+    zoomInToWardrobe(wardrobe: Phaser.Physics.Matter.Sprite & MatterJS.BodyType) {
+        this.cameras.main.pan(wardrobe.x, wardrobe.y - 80, 1000, "Power2");
+        this.cameras.main.zoomTo(2.2, 1000, "Power2");
+        wardrobe.setData("zoomState", WARDROBE_ZOOMING_IN);
+        setTimeout(() => wardrobe.setData("zoomState", WARDROBE_ZOOMED_IN), 1000);
     }
 
     zoomOutFromWardrobe(wardrobe: Phaser.Physics.Matter.Sprite & MatterJS.BodyType) {
@@ -366,17 +367,25 @@ export class Game extends Scene {
             this.addItemToWardrobe(wardrobe, clothingItem);
 
             clothingItem.setInteractive({ useHandCursor: true });
-            clothingItem.on("pointerdown", () => {
+            clothingItem.on("pointerup", () => {
                 if (
                     clothingItem.state === CLOTHING_IN_WARDROBE &&
                     wardrobe.getData("zoomState") === WARDROBE_ZOOMED_IN
                 ) {
                     this.removeItemFromWardrobe(wardrobe, clothingItem, true);
                     this.zoomOutFromWardrobe(wardrobe);
+                } else if (
+                    clothingItem.state === CLOTHING_IN_WARDROBE &&
+                    wardrobe.getData("zoomState") === WARDROBE_ZOOMED_OUT
+                ) {
+                    this.zoomInToWardrobe(wardrobe);
                 }
             });
             clothingItem.on("pointerover", () => {
-                console.log({ zoomState: wardrobe.getData("zoomState") });
+                if (clothingItem.state === CLOTHING_IN_WARDROBE) {
+                    this.openWardrobe(wardrobe);
+                }
+
                 if (
                     clothingItem.state === CLOTHING_IN_WARDROBE &&
                     [WARDROBE_ZOOMED_IN, WARDROBE_ZOOMING_IN].includes(
@@ -398,7 +407,8 @@ export class Game extends Scene {
                     clothingItem.state === CLOTHING_IN_WARDROBE &&
                     [WARDROBE_ZOOMED_IN, WARDROBE_ZOOMING_IN].includes(
                         wardrobe.getData("zoomState"),
-                    )
+                    ) &&
+                    clothingItem.getData("originalScale") != null
                 ) {
                     this.tweens.add({
                         targets: clothingItem,
@@ -590,7 +600,7 @@ export class Game extends Scene {
 
         const chuppah = this.matter.add.image(
             GAME_WIDTH / 2,
-            GAME_HEIGHT - 444,
+            GAME_HEIGHT - 448,
             "chuppah",
             undefined,
             { isStatic: true },
@@ -601,8 +611,8 @@ export class Game extends Scene {
 
         const chuppahTop = this.createRope(
             "chuppah-top",
-            new Phaser.Geom.Point(GAME_WIDTH / 2 - 300, GAME_HEIGHT - 760),
-            new Phaser.Geom.Point(GAME_WIDTH / 2 + 300, GAME_HEIGHT - 765),
+            new Phaser.Geom.Point(GAME_WIDTH / 2 - 300, GAME_HEIGHT - 765),
+            new Phaser.Geom.Point(GAME_WIDTH / 2 + 300, GAME_HEIGHT - 770),
             30,
             5,
             20,
