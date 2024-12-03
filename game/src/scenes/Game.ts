@@ -22,7 +22,29 @@ import {
     ONLY_BANNER,
     DEPTH_FLASH,
     DEPTH_BACKGROUND,
+    WARDROBE_ZOOMED_OUT,
+    WARDROBE_ZOOMED_IN,
+    WARDROBE_ZOOMING_IN,
+    WARDROBE_ZOOMING_OUT,
 } from "../constants";
+
+const ALL_CLOTHING_KEYS = [
+    "dress",
+    "suit",
+    "mario-hat",
+    "bunny-ears",
+    "cassidy-sunglasses",
+    "speedo",
+];
+// prettier-ignore
+const CLOTHING_SCALES: Record<string, number> = {
+    "dress": 1.0,
+    "suit": 1.0,
+    "mario-hat": 0.5,
+    "bunny-ears": 0.5,
+    "cassidy-sunglasses": 0.5,
+    "speedo": 1.0,
+};
 
 export class Game extends Scene {
     wind: Phaser.Math.Vector2;
@@ -36,12 +58,16 @@ export class Game extends Scene {
 
         this.load.image("lauren", "lauren.png");
         this.load.image("cassidy", "cassidy.png");
-        this.load.image("dress", "dress.png");
-        this.load.image("speedo", "speedo.png");
-        this.load.image("suit", "suit.png");
+        this.load.image("chuppah", "chuppah.png");
+        this.load.image("chuppah-platform", "chuppah-platform.png");
         this.load.image("wardrobe-door", "wardrobe-door.png");
         this.load.image("banner", "banner.png");
         this.load.image("camera", "camera.png");
+        this.load.image("stool", "stool.png");
+
+        ALL_CLOTHING_KEYS.forEach((clothingKey) => {
+            this.load.image(clothingKey, `${clothingKey}.png`);
+        });
     }
 
     create() {
@@ -82,7 +108,7 @@ export class Game extends Scene {
 
     createPeople(): Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> {
         const lauren = this.matter.add.image(
-            GAME_WIDTH / 2 - 440,
+            GAME_WIDTH / 2 - 480,
             400,
             "lauren",
             undefined,
@@ -96,7 +122,7 @@ export class Game extends Scene {
         lauren.setCollidesWith(CATEGORY_BARRIERS | CATEGORY_OBJECTS);
 
         const cassidy = this.matter.add.image(
-            GAME_WIDTH / 2 + 440,
+            GAME_WIDTH / 2 + 480,
             400,
             "cassidy",
             undefined,
@@ -147,7 +173,7 @@ export class Game extends Scene {
             doors.push(door);
         }
 
-        wardrobe.setData("zoomedIn", false);
+        wardrobe.setData("zoomState", WARDROBE_ZOOMED_OUT);
         wardrobe.setData("doors", doors);
         wardrobe.setState(WARDROBE_CLOSED);
 
@@ -159,12 +185,16 @@ export class Game extends Scene {
             this.closeWardrobe(wardrobe);
         });
         wardrobe.on("pointerup", () => {
-            if (wardrobe.getData("zoomedIn")) {
+            if (wardrobe.getData("zoomState") === WARDROBE_ZOOMED_IN) {
                 this.zoomOutFromWardrobe(wardrobe);
-            } else {
+            } else if (wardrobe.getData("zoomState") === WARDROBE_ZOOMED_OUT) {
                 this.cameras.main.pan(wardrobe.x, wardrobe.y - 80, 1000, "Power2");
                 this.cameras.main.zoomTo(2.2, 1000, "Power2");
-                wardrobe.setData("zoomedIn", true);
+                wardrobe.setData("zoomState", WARDROBE_ZOOMING_IN);
+                setTimeout(
+                    () => wardrobe.setData("zoomState", WARDROBE_ZOOMED_IN),
+                    1000,
+                );
             }
         });
 
@@ -193,7 +223,7 @@ export class Game extends Scene {
     }
 
     closeWardrobe(wardrobe: Phaser.Physics.Matter.Sprite & MatterJS.BodyType) {
-        if (wardrobe.getData("zoomedIn")) return;
+        if (wardrobe.getData("zoomState") !== WARDROBE_ZOOMED_OUT) return;
         const doors = wardrobe.getData("doors") as Array<Phaser.GameObjects.Mesh>;
         if (wardrobe.state === WARDROBE_CLOSED || wardrobe.state === WARDROBE_CLOSING)
             return;
@@ -215,9 +245,10 @@ export class Game extends Scene {
     }
 
     zoomOutFromWardrobe(wardrobe: Phaser.Physics.Matter.Sprite & MatterJS.BodyType) {
-        this.cameras.main.pan(GAME_WIDTH / 2, GAME_HEIGHT / 2, 1000, "Power2");
-        this.cameras.main.zoomTo(1, 1000, "Power2");
-        wardrobe.setData("zoomedIn", false);
+        this.cameras.main.pan(GAME_WIDTH / 2, GAME_HEIGHT / 2, 500, "Power2");
+        this.cameras.main.zoomTo(1, 500, "Power2");
+        wardrobe.setData("zoomState", WARDROBE_ZOOMING_OUT);
+        setTimeout(() => wardrobe.setData("zoomState", WARDROBE_ZOOMED_OUT), 500);
     }
 
     addItemToWardrobe(
@@ -285,11 +316,10 @@ export class Game extends Scene {
 
             const x = wardrobe.x;
             const y = wardrobe.y;
-            const scale = 1;
+            const scale = item.getData("fullScale");
 
             this.children.bringToTop(item);
             item.setDepth(DEPTH_DEFAULT);
-            item.setState(CLOTHING_UNATTACHED);
 
             if (animate) {
                 this.tweens.add({
@@ -303,12 +333,14 @@ export class Game extends Scene {
                     onComplete: () => {
                         item.setStatic(false);
                         this.closeWardrobe(wardrobe);
+                        item.setState(CLOTHING_UNATTACHED);
                     },
                 });
             } else {
                 item.setPosition(wardrobe.x, wardrobe.y);
                 item.setScale(scale);
                 item.setStatic(false);
+                item.setState(CLOTHING_UNATTACHED);
             }
             return true;
         } else {
@@ -317,13 +349,16 @@ export class Game extends Scene {
     }
 
     createClothing(wardrobe: Phaser.Physics.Matter.Sprite & MatterJS.BodyType) {
-        ["dress", "suit", "speedo"].forEach((clothingKey) => {
+        ALL_CLOTHING_KEYS.forEach((clothingKey) => {
             const clothingItem = this.matter.add.image(
                 200,
                 200,
                 clothingKey,
                 undefined,
             ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+            clothingItem.setScale(CLOTHING_SCALES[clothingKey]);
+            clothingItem.setData("fullScale", clothingItem.scale);
+
             clothingItem.setCollisionCategory(CATEGORY_CLOTHES);
             clothingItem.setCollidesWith(CATEGORY_BARRIERS);
             clothingItem.setState(CLOTHING_UNATTACHED);
@@ -333,16 +368,19 @@ export class Game extends Scene {
             clothingItem.on("pointerdown", () => {
                 if (
                     clothingItem.state === CLOTHING_IN_WARDROBE &&
-                    wardrobe.getData("zoomedIn")
+                    wardrobe.getData("zoomState") === WARDROBE_ZOOMED_IN
                 ) {
                     this.removeItemFromWardrobe(wardrobe, clothingItem, true);
                     this.zoomOutFromWardrobe(wardrobe);
                 }
             });
             clothingItem.on("pointerover", () => {
+                console.log({ zoomState: wardrobe.getData("zoomState") });
                 if (
                     clothingItem.state === CLOTHING_IN_WARDROBE &&
-                    wardrobe.getData("zoomedIn")
+                    [WARDROBE_ZOOMED_IN, WARDROBE_ZOOMING_IN].includes(
+                        wardrobe.getData("zoomState"),
+                    )
                 ) {
                     clothingItem.setData("originalScale", clothingItem.scale);
                     this.tweens.add({
@@ -357,7 +395,9 @@ export class Game extends Scene {
             clothingItem.on("pointerout", () => {
                 if (
                     clothingItem.state === CLOTHING_IN_WARDROBE &&
-                    wardrobe.getData("zoomedIn")
+                    [WARDROBE_ZOOMED_IN, WARDROBE_ZOOMING_IN].includes(
+                        wardrobe.getData("zoomState"),
+                    )
                 ) {
                     this.tweens.add({
                         targets: clothingItem,
@@ -412,17 +452,30 @@ export class Game extends Scene {
                             0,
                         );
 
-                        const transform =
+                        const gameObjectWorldTransform =
                             new Phaser.GameObjects.Components.TransformMatrix().copyFrom(
                                 (
                                     gameObject as Phaser.Physics.Matter.Sprite
                                 ).getWorldTransformMatrix(),
                             );
-                        transform.multiply(
-                            new Phaser.GameObjects.Components.TransformMatrix()
-                                .copyFrom(person.getWorldTransformMatrix())
-                                .invert(),
-                        );
+                        const personWorldTransform =
+                            new Phaser.GameObjects.Components.TransformMatrix().copyFrom(
+                                person.getWorldTransformMatrix(),
+                            );
+                        const scaleTransform =
+                            new Phaser.GameObjects.Components.TransformMatrix(
+                                body.scale.x,
+                                0,
+                                0,
+                                body.scale.y,
+                                0,
+                                0,
+                            );
+                        scaleTransform.invert();
+                        const transform = gameObjectWorldTransform;
+                        transform.multiply(scaleTransform);
+                        personWorldTransform.invert();
+                        transform.multiply(personWorldTransform);
                         const relativeUpper = transform.transformPoint(0, -30);
                         const relativeLower = transform.transformPoint(0, 30);
                         // Add two constraints to prevent rotation.
@@ -524,26 +577,29 @@ export class Game extends Scene {
     }
 
     createChuppah() {
-        const poles: Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> = [];
-        for (let poleIndex = 0; poleIndex < 2; poleIndex++) {
-            const poleRectangle = this.add.rectangle(
-                GAME_WIDTH / 2 - 300 + 600 * poleIndex,
-                GAME_HEIGHT - 350,
-                30,
-                700,
-                0x5c4033,
-            );
-            poleRectangle.setDepth(DEPTH_FOREGROUND);
-            const pole = this.matter.add.gameObject(poleRectangle, {
-                isStatic: true,
-            }) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
-            poles.push(pole);
-            pole.setCollisionCategory(CATEGORY_FOREGROUND);
-            pole.setCollidesWith(0);
-        }
+        const chuppahPlatform = this.matter.add.image(
+            GAME_WIDTH / 2,
+            GAME_HEIGHT - 22,
+            "chuppah-platform",
+            undefined,
+            { isStatic: true },
+        );
+        chuppahPlatform.setCollisionCategory(CATEGORY_OBJECTS);
+        chuppahPlatform.setDepth(DEPTH_DEFAULT);
 
-        this.createChuppahLine(poles, 30, 12);
-        this.createChuppahLine(poles, 30, 16);
+        const chuppah = this.matter.add.image(
+            GAME_WIDTH / 2,
+            GAME_HEIGHT - 444,
+            "chuppah",
+            undefined,
+            { isStatic: true },
+        );
+        chuppah.setDepth(DEPTH_FOREGROUND);
+        chuppah.setCollisionCategory(CATEGORY_FOREGROUND);
+        chuppah.setCollidesWith(0);
+
+        // this.createChuppahLine(poles, 30, 12);
+        // this.createChuppahLine(poles, 30, 16);
     }
 
     createBanner() {
@@ -600,14 +656,16 @@ export class Game extends Scene {
     }
 
     createCamera() {
-        const cameraTable = this.add.rectangle(
+        const stool = this.matter.add.image(
             GAME_WIDTH / 2 - 800,
-            GAME_HEIGHT - 30,
-            120,
-            70,
-            0x5c4033,
+            GAME_HEIGHT - 75,
+            "stool",
+            undefined,
+            {
+                isStatic: true,
+            },
         );
-        cameraTable.setDepth(DEPTH_BACKGROUND);
+        stool.setDepth(DEPTH_BACKGROUND);
         const cameraFlash = this.add.rectangle(
             GAME_WIDTH / 2,
             GAME_HEIGHT / 2,
@@ -619,7 +677,7 @@ export class Game extends Scene {
         cameraFlash.setDepth(DEPTH_FLASH);
         const camera = this.matter.add.image(
             GAME_WIDTH / 2 - 800,
-            GAME_HEIGHT - 95,
+            GAME_HEIGHT - 168,
             "camera",
             undefined,
             {
@@ -631,7 +689,7 @@ export class Game extends Scene {
         camera.on("pointerover", () => {
             this.tweens.add({
                 targets: camera,
-                y: GAME_HEIGHT - 115,
+                y: GAME_HEIGHT - 188,
                 duration: 200,
                 ease: "Power2",
             });
@@ -639,7 +697,7 @@ export class Game extends Scene {
         camera.on("pointerout", () => {
             this.tweens.add({
                 targets: camera,
-                y: GAME_HEIGHT - 95,
+                y: GAME_HEIGHT - 168,
                 duration: 200,
                 ease: "Power2",
             });

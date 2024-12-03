@@ -11,6 +11,11 @@ export const CLOTHING_IN_WARDROBE = "clothing-in-wardrobe";
 export const CLOTHING_UNATTACHED = "clothing-unattached";
 export const CLOTHING_ATTACHED = "clothing-attached";
 
+export const WARDROBE_ZOOMED_OUT = "wardrobe-zoomed-out";
+export const WARDROBE_ZOOMED_IN = "wardrobe-zoomed-in";
+export const WARDROBE_ZOOMING_IN = "wardrobe-zooming-in";
+export const WARDROBE_ZOOMING_OUT = "wardrobe-zooming-out";
+
 export const WARDROBE_OPENING = "wardrobe-opening";
 export const WARDROBE_OPEN = "wardrobe-open";
 export const WARDROBE_CLOSING = "wardrobe-closing";
