@@ -60,6 +60,7 @@ export class Game extends Scene {
         this.load.image("cassidy", "cassidy.png");
         this.load.image("chuppah", "chuppah.png");
         this.load.image("chuppah-platform", "chuppah-platform.png");
+        this.load.image("chuppah-top", "chuppah-top-unskewed.png");
         this.load.image("wardrobe-door", "wardrobe-door.png");
         this.load.image("banner", "banner.png");
         this.load.image("camera", "camera.png");
@@ -598,25 +599,42 @@ export class Game extends Scene {
         chuppah.setCollisionCategory(CATEGORY_FOREGROUND);
         chuppah.setCollidesWith(0);
 
-        // this.createChuppahLine(poles, 30, 12);
-        // this.createChuppahLine(poles, 30, 16);
+        const chuppahTop = this.createRope(
+            "chuppah-top",
+            new Phaser.Geom.Point(GAME_WIDTH / 2 - 300, GAME_HEIGHT - 760),
+            new Phaser.Geom.Point(GAME_WIDTH / 2 + 300, GAME_HEIGHT - 765),
+            30,
+            5,
+            20,
+            CATEGORY_OBJECTS,
+            CATEGORY_OBJECTS,
+            0.8,
+        );
+        chuppahTop.setDepth(DEPTH_DEFAULT);
     }
 
-    createBanner() {
-        const numPoints = 30;
-        const bannerRope = this.add.rope(
+    createRope(
+        texture: string,
+        ropeBegin: Phaser.Geom.Point,
+        ropeEnd: Phaser.Geom.Point,
+        numPoints: number,
+        droopX: number,
+        droopY: number,
+        collisionCategory: number,
+        collidesWith: number,
+        segmentLengthMultiplier = 1.0,
+    ): Phaser.GameObjects.Rope {
+        const rope = this.add.rope(
             0,
             0,
-            "banner",
+            texture,
             undefined,
             numPoints as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         );
-        bannerRope.setDepth(DEPTH_BANNER);
 
-        const ropeBegin = new Phaser.Geom.Point(GAME_WIDTH / 2 - 500, -50);
-        const ropeEnd = new Phaser.Geom.Point(GAME_WIDTH / 2 + 500, -50);
         const segmentLength =
-            (1.0 * Phaser.Math.Distance.BetweenPoints(ropeBegin, ropeEnd)) /
+            (segmentLengthMultiplier *
+                Phaser.Math.Distance.BetweenPoints(ropeBegin, ropeEnd)) /
             (numPoints - 1);
 
         const ropePoints: Array<Phaser.Physics.Matter.Sprite & MatterJS.BodyType> = [];
@@ -627,32 +645,50 @@ export class Game extends Scene {
                 ropeEnd,
                 pointIndex / (numPoints - 1),
             );
-            ropePointLocation.y += 200 * Math.sin((pointIndex / numPoints) * Math.PI);
+            ropePointLocation.y +=
+                droopY * Math.sin((pointIndex / numPoints) * Math.PI);
             ropePointLocation.x +=
-                -10 * Math.sin((pointIndex / numPoints) * 2 * Math.PI);
+                -droopX * Math.sin((pointIndex / numPoints) * 2 * Math.PI);
             const point = this.matter.add.gameObject(
                 this.add.circle(ropePointLocation.x, ropePointLocation.y, 1),
                 {
                     isStatic: pointIndex === 0 || pointIndex === numPoints - 1,
                 },
             ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
-            point.setCollisionCategory(CATEGORY_FOREGROUND);
-            point.setCollidesWith(0);
+            point.setCollisionCategory(collisionCategory);
+            point.setCollidesWith(collidesWith);
             if (prevPoint !== null) {
                 this.matter.add.constraint(point, prevPoint, segmentLength, 0);
             }
             ropePoints.push(point);
             prevPoint = point;
         }
+
         this.matter.world.on("beforeupdate", () => {
             for (let pointIndex = 0; pointIndex < numPoints; pointIndex++) {
-                bannerRope.points[pointIndex].x = ropePoints[pointIndex].x;
-                bannerRope.points[pointIndex].y = ropePoints[pointIndex].y;
+                rope.points[pointIndex].x = ropePoints[pointIndex].x;
+                rope.points[pointIndex].y = ropePoints[pointIndex].y;
 
                 ropePoints[pointIndex].applyForce(this.wind);
             }
-            bannerRope.setDirty();
+            rope.setDirty();
         });
+
+        return rope;
+    }
+
+    createBanner() {
+        const bannerRope = this.createRope(
+            "banner",
+            new Phaser.Geom.Point(GAME_WIDTH / 2 - 500, -80),
+            new Phaser.Geom.Point(GAME_WIDTH / 2 + 500, -80),
+            30,
+            10,
+            200,
+            CATEGORY_FOREGROUND,
+            0,
+        );
+        bannerRope.setDepth(DEPTH_BANNER);
     }
 
     createCamera() {
