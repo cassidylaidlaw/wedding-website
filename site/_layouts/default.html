@@ -28,11 +28,11 @@
 
     <script type="text/javascript">
       window.onlyBanner = {% if page.url == "/" %}false{% else %}true{% endif %};
-      window.gameHeight = {% if page.url == "/" %}1000{% else %}250{% endif %};
+      window.gameHeight = {% if page.url == "/" %}1000{% else %}170{% endif %};
     </script>
   </head>
   <body>
-    <div id="game-container" style="height: {% if page.url == "/" %}auto{% else %}150px{% endif %};"></div>
+    <div id="game-container" style="height: {% if page.url == "/" %}auto{% else %}100px{% endif %};"></div>
     {% include navigation.html %}
 
     <main class="container">
