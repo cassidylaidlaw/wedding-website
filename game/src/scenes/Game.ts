@@ -43,7 +43,7 @@ const CLOTHING_SCALES: Record<string, number> = {
     "mario-hat": 0.5,
     "bunny-ears": 0.5,
     "cassidy-sunglasses": 0.5,
-    "speedo": 1.0,
+    "speedo": 0.5,
 };
 
 export class Game extends Scene {
