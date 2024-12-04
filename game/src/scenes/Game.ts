@@ -595,7 +595,7 @@ export class Game extends Scene {
             undefined,
             { isStatic: true },
         );
-        chuppahPlatform.setCollisionCategory(CATEGORY_OBJECTS);
+        chuppahPlatform.setCollisionCategory(CATEGORY_BARRIERS);
         chuppahPlatform.setDepth(DEPTH_DEFAULT);
 
         const chuppah = this.matter.add.image(
@@ -614,8 +614,8 @@ export class Game extends Scene {
             new Phaser.Geom.Point(GAME_WIDTH / 2 - 300, GAME_HEIGHT - 765),
             new Phaser.Geom.Point(GAME_WIDTH / 2 + 300, GAME_HEIGHT - 770),
             30,
-            5,
-            20,
+            6,
+            50,
             CATEGORY_OBJECTS,
             CATEGORY_OBJECTS,
             0.8,
@@ -693,8 +693,8 @@ export class Game extends Scene {
             new Phaser.Geom.Point(GAME_WIDTH / 2 - 500, -80),
             new Phaser.Geom.Point(GAME_WIDTH / 2 + 500, -80),
             30,
-            10,
-            200,
+            13,
+            180,
             CATEGORY_FOREGROUND,
             0,
         );
