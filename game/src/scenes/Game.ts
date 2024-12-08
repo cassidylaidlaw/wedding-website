@@ -61,7 +61,9 @@ export class Game extends Scene {
         this.load.image("chuppah", "chuppah.png");
         this.load.image("chuppah-platform", "chuppah-platform.png");
         this.load.image("chuppah-top", "chuppah-top-unskewed.png");
-        this.load.image("wardrobe-door", "wardrobe-door.png");
+        this.load.image("wardrobe", "wardrobe.png");
+        this.load.image("wardrobe-door-0", "wardrobe-door-0.png");
+        this.load.image("wardrobe-door-1", "wardrobe-door-1.png");
         this.load.image("banner", "banner.png");
         this.load.image("camera", "camera.png");
         this.load.image("stool", "stool.png");
@@ -140,36 +142,42 @@ export class Game extends Scene {
     }
 
     createWardrobe() {
-        const wardrobeRectangle = this.add.rectangle(
+        const wardrobe = this.matter.add.sprite(
             GAME_WIDTH - 180,
-            GAME_HEIGHT - 300,
-            300,
-            600,
-            0x5c4033,
-        );
-        wardrobeRectangle.setDepth(DEPTH_CONTAINER);
-        const wardrobe = this.matter.add.gameObject(wardrobeRectangle, {
-            isStatic: true,
-        }) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
-        wardrobe.setCollisionCategory(CATEGORY_FOREGROUND);
-        wardrobe.setCollidesWith(0);
+            GAME_HEIGHT - 315,
+            "wardrobe",
+            undefined,
+            {
+                isStatic: true,
+            },
+        ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+        wardrobe.setDepth(DEPTH_CONTAINER);
+        wardrobe.setCollisionCategory(CATEGORY_OBJECTS);
+        wardrobe.setCollidesWith(CATEGORY_OBJECTS);
 
         wardrobe.setData("slots", Array(6).fill(null));
-        wardrobe.setData("slotsPerRow", 2);
+        wardrobe.setData("slotsPerRow", 3);
 
         const doors: Array<Phaser.GameObjects.Mesh> = [];
         for (let doorIndex = 0; doorIndex < 2; doorIndex++) {
             const door = this.add.mesh(
-                wardrobe.x + 120 * (doorIndex * 2 - 1),
-                GAME_HEIGHT - 370,
-                "wardrobe-door",
+                wardrobe.x + 158 * (doorIndex * 2 - 1),
+                GAME_HEIGHT - 375,
+                `wardrobe-door-${doorIndex}`,
             );
+            // Front of door.
             door.addVertices(
-                [0, 1.6, 1 - doorIndex * 2, 1.6, 0, -1.6, 1 - doorIndex * 2, -1.6],
-                [1, 0, 0, 0, 1, 1, 0, 1],
-                [0, 2, 1, 2, 3, 1, 0, 1, 2, 2, 1, 3],
+                [0, 1.58, 1 - doorIndex * 2, 1.58, 0, -1.58, 1 - doorIndex * 2, -1.58],
+                [0, 0, 0.5, 0, 0, 1, 0.5, 1],
+                doorIndex == 0 ? [0, 2, 1, 2, 3, 1] : [0, 1, 2, 2, 1, 3],
             );
-            door.panZ(20);
+            // Back of door.
+            door.addVertices(
+                [0, 1.58, 1 - doorIndex * 2, 1.58, 0, -1.58, 1 - doorIndex * 2, -1.58],
+                [1, 0, 0.5, 0, 1, 1, 0.5, 1],
+                doorIndex == 0 ? [0, 1, 2, 2, 1, 3] : [0, 2, 1, 2, 3, 1],
+            );
+            door.panZ(15);
             door.setDepth(DEPTH_CONTAINER_DOOR);
             doors.push(door);
         }
@@ -268,11 +276,11 @@ export class Game extends Scene {
             const slotsPerRow = wardrobe.getData("slotsPerRow");
             const row = Math.floor(slotIndex / wardrobe.getData("slotsPerRow"));
             const column = slotIndex % wardrobe.getData("slotsPerRow");
-            const slotSize = 240 / slotsPerRow;
+            const slotSize = 280 / slotsPerRow;
 
             const scale = (0.7 * slotSize) / Math.max(item.width, item.height);
-            const x = wardrobe.x - 120 + slotSize * (column + 0.5);
-            const y = wardrobe.y - wardrobe.height / 2 + 40 + slotSize * (row + 0.5);
+            const x = wardrobe.x - 140 + slotSize * (column + 0.5);
+            const y = wardrobe.y - wardrobe.height / 2 + 20 + slotSize * (row + 0.5);
 
             item.setStatic(true);
             item.setState(CLOTHING_IN_WARDROBE);
@@ -291,10 +299,7 @@ export class Game extends Scene {
                     },
                 });
             } else {
-                item.setPosition(
-                    wardrobe.x - 120 + slotSize * (column + 0.5),
-                    wardrobe.y - wardrobe.height / 2 + 40 + slotSize * (row + 0.5),
-                );
+                item.setPosition(x, y);
                 item.setScale(scale);
                 item.setDepth(DEPTH_IN_CONTAINER);
             }
@@ -663,6 +668,7 @@ export class Game extends Scene {
                 this.add.circle(ropePointLocation.x, ropePointLocation.y, 1),
                 {
                     isStatic: pointIndex === 0 || pointIndex === numPoints - 1,
+                    mass: 1 / numPoints,
                 },
             ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
             point.setCollisionCategory(collisionCategory);
