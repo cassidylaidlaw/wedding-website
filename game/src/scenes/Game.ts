@@ -151,6 +151,7 @@ export class Game extends Scene {
                 isStatic: true,
             },
         ) as Phaser.Physics.Matter.Sprite & MatterJS.BodyType;
+        wardrobe.setScale(0.5);
         wardrobe.setDepth(DEPTH_CONTAINER);
         wardrobe.setCollisionCategory(CATEGORY_OBJECTS);
         wardrobe.setCollidesWith(CATEGORY_OBJECTS);
@@ -280,7 +281,11 @@ export class Game extends Scene {
 
             const scale = (0.7 * slotSize) / Math.max(item.width, item.height);
             const x = wardrobe.x - 140 + slotSize * (column + 0.5);
-            const y = wardrobe.y - wardrobe.height / 2 + 20 + slotSize * (row + 0.5);
+            const y =
+                wardrobe.y -
+                (wardrobe.height * wardrobe.scale) / 2 +
+                20 +
+                slotSize * (row + 0.5);
 
             item.setStatic(true);
             item.setState(CLOTHING_IN_WARDROBE);
