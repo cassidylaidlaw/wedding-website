@@ -4,8 +4,14 @@ $base-color: rgb(138, 149, 133);
 @import "gallery";
 
 * {
-    font-family: "Playfair Display", serif;
-    font-optical-sizing: auto;
+    font-family: "Inter", sans-serif;
+    font-optical-sizing: auto; color: #222;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Playfair Display", serif; font-weight: 700; color: #555;
+    &:not(:first-child) { margin-top: 40px; }
+    margin-bottom: 15px;
 }
 
 body {
@@ -15,11 +21,16 @@ body {
 nav {
     text-align: center;
     .nav-item {
+        font-family: "Playfair Display", serif; font-weight: 500;
         display: inline-block; line-height: 40px; font-size: 18px; min-width: 100px;
         padding: 0 30px; color: $base-color; text-decoration: none;
+        border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+        margin-bottom: 10px;
     }
     .nav-item:hover { text-decoration: underline; }
-    .nav-item.current { border-top: 4px solid $base-color; border-bottom: 4px solid $base-color; }
+    .nav-item.current {
+        border-top: 4px solid $base-color; border-bottom: 4px solid $base-color;
+    }
     margin: 40px 0;
 }
 
@@ -28,9 +39,15 @@ nav {
     margin-top: 40px;
     .registry {
         width: 200px; margin: 10px; padding: 10px; border: 2px solid $base-color;
+        text-decoration: none; text-align: center;
         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0);
         transition: box-shadow 0.2s ease, transform 0.2s ease;
         img { width: 100%; height: 80px; object-fit: contain; }
+        h3 {
+            font-family: "Inter", sans-serif;
+            color: black; font-size: 18px;
+            margin: 10px 0;
+        }
     }
     .registry:hover {
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);

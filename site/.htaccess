@@ -1,0 +1,11 @@
+# Enable rewrite engine
+RewriteEngine On
+
+# Redirect requests without file extensions to corresponding .html files
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !\.[a-zA-Z0-9]{2,4}$
+RewriteRule ^([^/]+)$ $1.html [L]
+
+# Custom 404 error page
+ErrorDocument 404 /404.html

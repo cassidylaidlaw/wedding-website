@@ -14,7 +14,7 @@ All the public transit systems in the Bay Area take [Clipper Card](https://www.c
 ## Lodging
 Here are some hotels in Berkeley that we recommend:
 
- * **Hotel Aiden:** this is the closest hotel to shul and is inside the eruv. [Book through our hotel block here.](TODO)
+ * **Hotel Aiden:** this is the closest hotel to shul and is inside the eruv. We have a hotel block—stay tuned for the link to book.
  * **[Hotel Shattuck Plaza](https://www.hotelshattuckplaza.com/):** this hotel is in downtown Berkeley and is easily accssible by public transit.
  * **[Residence Inn Berkeley](https://www.marriott.com/en-us/hotels/oakrr-residence-inn-berkeley/overview/):** also in downtown Berkeley.
  * **[DoubleTree Berkeley Marina](https://www.hilton.com/en/hotels/jbkcadt-doubletree-berkeley-marina/):** this hotel is at the Berkeley Marina, which is scenic but not easily accessible without a car.
@@ -23,7 +23,7 @@ There are also plenty of Airbnbs in the area. Look in Berkeley, Albany, and Nort
 
 Let us know if you're having trouble finding accomodations—we can also reach out to friends and see if they have room.
 
-## Berkeley Recommendations
+## Local Recommendations
 Check out this map for our food and activity recommendations while you're in the area!
 
-<iframe src="https://www.google.com/maps/d/u/0/embed?mid=1AEhf9oWOUaL1A2lggGJJzeNdmtRNf7Y&ehbc=2E312F" width="640" height="480"></iframe>
+<iframe src="https://www.google.com/maps/d/u/0/embed?mid=1AEhf9oWOUaL1A2lggGJJzeNdmtRNf7Y&ehbc=2E312F" width="100%" height="480"></iframe>
