@@ -1,0 +1,206 @@
+---
+layout: default
+title: RSVP – Lauren and Cassidy's Wedding
+permalink: /rsvp
+---
+
+<h1>RSVP to Lauren and Cassidy's Wedding</h1>
+
+<div id="loading" class="mb-5 mt-5" style="display: none; text-align: center;">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<form id="name-form" target="none" onsubmit="lookupName(event)">
+    <p>Please enter your name below. If you're responding for a group, you will be able to RSVP for everyone in your party.</p>
+    <div class="mb-3">
+        <p id="name-form-error" class="form-text text-danger">&nbsp;</p>
+        <input type="text" id="name" required placeholder="Full name" class="form-control" autofocus>
+    </div>
+    <button class="btn btn-primary">Find Invitation</button>
+</form>
+
+<form id="rsvp-form" style="display: none;" onsubmit="submitRSVP(event)">
+    <p>Please indicate for each guest whether they will be attending the wedding and/or the Friday night dinner.</p>
+    <h2>Wedding</h2>
+    <p>July 6, 2025 at 4:00 PM</br>Urban Adamah, Berkeley, CA</p>
+    <div id="guest-list-wedding"></div>
+    <h2>Friday Night Dinner</h2>
+    <p>July 4, 2025 at 7:00 PM</br>Congregation Netivot Shalom, Berkeley, CA</p>
+    <div id="guest-list-dinner"></div>
+    <button class="btn btn-primary mt-3" type="submit">Submit RSVP</button>
+</form>
+
+<div id="rsvp-success" style="display: none;">
+    <p id="success-message">
+        Thank you for your RSVP. It has been recorded successfully.
+    </p>
+    <p id="already-message">
+        It looks like you have already submitted your RSVP. Click <strong>Edit RSVP</strong> below to change your response.
+    </p>
+    <h2>Your RSVP</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Wedding</h4>
+            <div id="rsvps-wedding"></div>
+        </div>
+        <div class="col-md-6">
+            <h4>Friday Night Dinner</h4>
+            <div id="rsvps-dinner"></div>
+        </div>
+    </div>
+    <button class="btn btn-primary mt-3" onclick="renderRSVPForm()">Edit RSVP</button>
+</div>
+
+<script>
+    const rsvpEndpoint = "https://cassidylaidlaw.com/wedding-rsvp.php";
+    let groupGuests = [];
+    let needsRsvp = false;
+
+    const rsvpEvents = ["wedding", "dinner"];
+    const rsvpOptions = [
+        { optionName: "Yes", displayText: "Accept" },
+        { optionName: "No", displayText: "Decline" },
+    ];
+
+    function lookupName(event) {
+        if (event) event.preventDefault();
+
+        const name = document.getElementById("name").value.trim();
+        if (!name) return;
+
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("name-form").style.display = "none";
+
+        document.getElementById("name-form-error").textContent = '\u00A0';
+        fetch(rsvpEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "lookup", name })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("loading").style.display = "none";
+            if (data.error) {
+                document.getElementById("name-form").style.display = "block";
+                document.getElementById("name-form-error").textContent = data.error;
+            } else {
+                groupGuests = data.guests;
+                const needsRsvp = groupGuests.some(guest => rsvpEvents.some(event => guest[event] === "NR"));
+                if (needsRsvp) {
+                    renderRSVPForm();
+                } else {
+                    renderSuccess(false);
+                }
+            }
+        });
+    }
+
+    function renderRSVPForm() {
+        document.getElementById("guest-list-wedding").innerHTML = "";
+        document.getElementById("guest-list-dinner").innerHTML = "";
+        document.getElementById("rsvp-form").style.display = "block";
+        document.getElementById("rsvp-success").style.display = "none";
+
+        groupGuests.forEach((guest, guestIndex) => {
+            rsvpEvents.forEach(rsvpEvent => {
+                const row = document.createElement("div");
+                row.classList.add("row", "mb-3");
+                document.getElementById(`guest-list-${rsvpEvent}`).appendChild(row);
+
+                guest[rsvpEvent] = guest[rsvpEvent] || "NR";
+                const fieldName = `guest-${guestIndex}-${rsvpEvent}`;
+
+                const nameColumn = document.createElement("div");
+                nameColumn.classList.add("col-md-6");
+                const nameLabel = document.createElement("label");
+                nameLabel.setAttribute("for", fieldName);
+                nameLabel.innerHTML = `<strong class="serif fs-5">${guest.name}</strong>`;
+                nameColumn.appendChild(nameLabel);
+                row.appendChild(nameColumn);
+
+                const rsvpColumn = document.createElement("div");
+                rsvpColumn.classList.add("col-md-6");
+
+                rsvpOptions.forEach(({ optionName, displayText }) => {
+                    const radio = document.createElement("input");
+                    radio.type = "radio";
+                    radio.name = fieldName;
+                    radio.value = optionName;
+                    radio.required = true;
+                    radio.id = `${fieldName}-${optionName}`;
+                    radio.classList.add("btn-check");
+                    radio.autocomplete = "off";
+                    if (guest[rsvpEvent] === optionName) {
+                        radio.checked = true;
+                    }
+                    const label = document.createElement("label");
+                    label.classList.add("btn", "btn-outline-secondary");
+                    label.setAttribute("for", `${fieldName}-${optionName}`);
+                    label.textContent = displayText;
+                    rsvpColumn.appendChild(radio);
+                    rsvpColumn.appendChild(label);
+                    rsvpColumn.appendChild(document.createTextNode(" ")); // Add space between buttons
+                });
+
+                row.appendChild(rsvpColumn);
+            });
+        });
+
+        document.getElementById("rsvp-form").classList.remove("hidden");
+    }
+
+    function submitRSVP(event) {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("rsvp-form").style.display = "none";
+
+        groupGuests.forEach((guest, guestIndex) => {
+            ["wedding", "dinner"].forEach(rsvpType => {
+                const fieldName = `guest-${guestIndex}-${rsvpType}`;
+                const selectedValue = formData.get(fieldName);
+                guest[rsvpType] = selectedValue || "NR";
+            });
+        });
+
+        fetch(rsvpEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "submit", guests: groupGuests })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("loading").style.display = "none";
+            if (data.success) {
+                renderSuccess(true);
+            } else {
+                document.getElementById("rsvp-form").style.display = "block";
+                document.getElementById("name-form-error").textContent = data.error || "An error occurred. Please try again.";
+            }
+        });
+    }
+
+    function renderSuccess(firstTime) {
+        rsvpEvents.forEach(rsvpEvent => {
+            const rsvpsDiv = document.getElementById(`rsvps-${rsvpEvent}`);
+            rsvpsDiv.innerHTML = ""; // Clear previous content
+            groupGuests.forEach(guest => {
+                const rsvp = document.createElement("p");
+                const rsvpCircle = document.createElement("span");
+                rsvpCircle.classList.add("rsvp-circle", guest[rsvpEvent] === "Yes" ? "yes" : "no");
+                rsvpCircle.textContent = guest[rsvpEvent] === "Yes" ? "✓" : "✗";
+                rsvp.appendChild(rsvpCircle);
+                rsvp.appendChild(document.createTextNode(guest.name));
+                rsvpsDiv.appendChild(rsvp);
+            });
+        });
+
+        document.getElementById("rsvp-success").style.display = "block";
+        document.getElementById("success-message").style.display = firstTime ? "block" : "none";
+        document.getElementById("already-message").style.display = firstTime ? "none" : "block";
+    }
+</script>
